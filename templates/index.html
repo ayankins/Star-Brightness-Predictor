@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Star Brightness Predictor</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>  <!-- Use a specific version -->
+    <style>
+        body {
+            font-family: 'Orbitron', sans-serif;
+            text-align: center;
+            background: linear-gradient(to bottom, #0a0a23, #1a1a3d);
+            color: #ffffff;
+            margin: 0;
+            padding: 20px;
+            overflow: hidden;
+            position: relative;
+        }
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: -1;
+        }
+        h1 {
+            font-size: 2.5em;
+            text-shadow: 0 0 10px #ffffff;
+            margin-bottom: 30px;
+        }
+        form {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
+            display: inline-block;
+            backdrop-filter: blur(5px);
+        }
+        label {
+            font-size: 18px;
+            color: #d4d4ff;
+        }
+        input[type="text"] {
+            padding: 10px;
+            margin: 15px 0;
+            width: 220px;
+            border: 1px solid #aaaaff;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.2);
+            color: #ffffff;
+        }
+        input[type="submit"] {
+            padding: 10px 20px;
+            background: #6b48ff;
+            color: #ffffff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        input[type="submit"]:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px #6b48ff;
+        }
+        h3 {
+            font-size: 1.5em;
+            text-shadow: 0 0 5px #ffffff;
+            margin-top: 25px;
+        }
+        #plot {
+            max-width: 80%;
+            margin: 20px auto;
+        }
+        p {
+            color: #ff6b6b;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+        #loading {
+            display: none;
+            font-size: 16px;
+            color: #aaaaff;
+            margin-top: 15px;
+        }
+        #loading::after {
+            content: " .";
+            animation: dots 1.5s infinite;
+        }
+        @keyframes dots {
+            0% { content: " ."; }
+            33% { content: " .."; }
+            66% { content: " ..."; }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="starfield"></canvas>
+    <h1>Star Brightness Predictor</h1>
+    <form method="POST" onsubmit="showLoading()">
+        <label>Enter Kepler Star Name (e.g., Kepler-8):</label><br>
+        <input type="text" name="star_name" required><br>
+        <input type="submit" value="Analyze">
+    </form>
+    <div id="loading">Analyzing the cosmos</div>
+    {% if prediction %}
+        <h3>Prediction for {{ star_name }}: {{ prediction }}</h3>
+        <div id="plot"></div>
+        <script>
+            try {
+                const plotData = {{ plot_data | safe }};
+                console.log("Plot Data:", plotData);
+                if (plotData && plotData.data && plotData.data.length > 0 && plotData.layout) {
+                    Plotly.newPlot('plot', plotData.data, plotData.layout, {responsive: true});
+                } else {
+                    console.error("Invalid or empty plot data:", plotData);
+                }
+            } catch (e) {
+                console.error("Error rendering Plotly plot:", e);
+            }
+        </script>
+    {% endif %}
+    {% if error %}
+        <p>Error: {{ error }}</p>
+    {% endif %}
+
+    <script>
+        const canvas = document.getElementById('starfield');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const stars = [];
+        for (let i = 0; i < 200; i++) {
+            stars.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                radius: Math.random() * 1.5,
+                opacity: Math.random()
+            });
+        }
+
+        function drawStars() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            stars.forEach(star => {
+                ctx.beginPath();
+                ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(255, 255, 255, ${star.opacity})`;
+                ctx.fill();
+                star.opacity = (star.opacity + 0.01) % 1;
+            });
+            requestAnimationFrame(drawStars);
+        }
+        drawStars();
+
+        function showLoading() {
+            document.getElementById('loading').style.display = 'block';
+        }
+        window.onload = function() {
+            document.getElementById('loading').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
